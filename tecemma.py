@@ -37,7 +37,7 @@ class Zoom(tk.Frame):
       # Create canvas and put image on it
       self.canvas = tk.Canvas(self.master, highlightthickness=0,
                               xscrollcommand=hbar.set, yscrollcommand=vbar.set,
-                              bg='grey')
+                              bg='thistle1')
       self.canvas.grid(row=0, column=0, sticky='nswe')
       vbar.configure(command=self.canvas.yview)  # bind scrollbars to the canvas
       hbar.configure(command=self.canvas.xview)
@@ -58,6 +58,11 @@ class Zoom(tk.Frame):
       self.canvas.bind('<B1-Motion>',     self.__update_select)
       self.canvas.bind('<ButtonRelease-1>', self.__end_select)
       self.canvas.bind('<ButtonPress-3>', self.__delete_select)
+      # move selection
+      self.master.bind('<Control-Left>', self.__move_select_left)
+      self.master.bind('<Control-Right>', self.__move_select_right)
+      self.master.bind('<Control-Up>', self.__move_select_up)
+      self.master.bind('<Control-Down>', self.__move_select_down)
       # cropping
       self.master.bind('<Control-s>', self.__crop)
 
@@ -69,7 +74,6 @@ class Zoom(tk.Frame):
       self.imscale = 1.0
       self.imageid = None
       self.delta = 0.75
-      self.bg = 'grey'
       # Text is used to set proper coordinates to the image. You can make it invisible.
       self.text = self.canvas.create_text(0, 0, anchor='nw', text='')
       self.canvas.configure(scrollregion=self.canvas.bbox('all'))
@@ -99,6 +103,42 @@ class Zoom(tk.Frame):
     self.canvas.delete(self.item)
     self.item = None
 
+  def __move_select_left(self, event):
+    if self.item:
+      rect_coords = self.canvas.coords(self.item)
+      new_start_x = rect_coords[0] - 1
+      self.__delete_select(None)
+      self.start = [new_start_x, rect_coords[1]]
+      self.item = self.draw(self.start, [rect_coords[2], rect_coords[3]])
+      self.start = None
+
+  def __move_select_right(self, event):
+    if self.item:
+      rect_coords = self.canvas.coords(self.item)
+      new_start_x = rect_coords[0] + 1
+      self.__delete_select(None)
+      self.start = [new_start_x, rect_coords[1]]
+      self.item = self.draw(self.start, [rect_coords[2], rect_coords[3]])
+      self.start = None
+
+  def __move_select_up(self, event):
+    if self.item:
+      rect_coords = self.canvas.coords(self.item)
+      new_start_y = rect_coords[1] - 1
+      self.__delete_select(None)
+      self.start = [rect_coords[0], new_start_y]
+      self.item = self.draw(self.start, [rect_coords[2], rect_coords[3]])
+      self.start = None
+
+  def __move_select_down(self, event):
+    if self.item:
+      rect_coords = self.canvas.coords(self.item)
+      new_start_y = rect_coords[1] + 1
+      self.__delete_select(None)
+      self.start = [rect_coords[0], new_start_y]
+      self.item = self.draw(self.start, [rect_coords[2], rect_coords[3]])
+      self.start = None
+  
   def __crop(self, event):
     truecoords = self.canvas.coords(self.text)
     rect_coords = self.canvas.coords(self.item)
